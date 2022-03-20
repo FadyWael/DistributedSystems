@@ -1,0 +1,44 @@
+import java.net.*;
+import java.util.ArrayList;
+import java.io.*;
+
+public class SendOldMessagesThread extends Thread {
+    DatagramSocket unicastSocket;
+    ArrayList<String> history;
+    InetAddress clientAddress;
+    int clientPort;
+    int size;
+    public SendOldMessagesThread (ArrayList<String> history, int size, InetAddress clientAddress, int clientPort){
+        	try {
+				this.unicastSocket = new DatagramSocket();
+			} catch (SocketException e) {e.printStackTrace();}
+        	this.history = history;
+        	this.clientPort =clientPort;
+        	this.clientAddress = clientAddress;
+        	this.size = size;
+        	this.start();
+     }
+
+    public void run(){
+    	try {			              
+    		System.out.println("Transmitting OLD messages to the group ... ");
+			for ( int i = 0; i <= size ; i++ ) {
+					String m = history.get(i); 
+					DatagramPacket msgOut = new DatagramPacket(m.getBytes(), m.length(),clientAddress, clientPort);
+					unicastSocket.send(msgOut);	
+					delay(3000);
+			}
+			String m = "DONE";
+			DatagramPacket msgOut = new DatagramPacket(m.getBytes(), m.length(),clientAddress, clientPort);
+			unicastSocket.send(msgOut);	
+         }catch (EOFException e){System.out.println("Error EOF :"+e.getMessage());
+         } catch(IOException e) {System.out.println("Error readline :"+e.getMessage());
+         } finally{ }
+    }
+    
+    public void delay(int milliseconds){
+    	try {
+    		Thread.sleep(milliseconds);        
+        }catch (InterruptedException ie) { System.out.println(ie.getMessage()); }
+    }
+}
