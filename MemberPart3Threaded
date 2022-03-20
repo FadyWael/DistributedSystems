@@ -1,0 +1,61 @@
+import java.net.*;
+import java.util.ArrayList;
+import java.io.*;
+import java.awt.*;
+import javax.swing.*;
+
+
+public class MemberPart3Threaded {
+	@SuppressWarnings("deprecation")
+	public static void main(String args[]){ 
+		// args[0] = ID (or name) of the member to multicast to the group	
+		// args[1] = IP address of the group (e.g. "228.5.6.7")
+		// args[2] = number of messages to be transmitted to the group
+		MulticastSocket s =null;
+		ArrayList<String> history = new ArrayList<String>();
+		try {
+			
+	        JTextArea textarea = new JTextArea("Member Starting ...\n");
+	        textarea.setFont(new Font("Arial", Font.BOLD, 18));
+	        JPanel container = new JPanel();
+	        container.add(textarea);
+	        JScrollPane jsp = new JScrollPane(container);
+	        JFrame myFrame = new JFrame("Member " + args[0]);
+	        myFrame.setSize(500,400);
+	        
+	        myFrame.add(jsp);
+	        
+	        myFrame.setDefaultCloseOperation(myFrame.EXIT_ON_CLOSE);
+	        myFrame.setLocation(500*(Integer.parseInt(args[0])-1), 1);
+		    myFrame.setVisible(true);
+			
+		    textarea.append("Member " + args[0] + " first joining the group ...\n");
+			InetAddress group = InetAddress.getByName(args[1]);
+			int Port = 50000;
+			s = new MulticastSocket(Port);
+			s.joinGroup(group);
+				
+			textarea.append("Member " + args[0] + " is now a member of the group ...\n\n");
+			DatagramSocket unicastSocket = new DatagramSocket();
+			String joinMsg = "JOIN:" + unicastSocket.getLocalPort();
+			DatagramPacket msgJoin = new DatagramPacket(joinMsg.getBytes(), joinMsg.length(), group, Port);
+			s.send(msgJoin);
+			
+			ReceiveOldMessagesThread ReceivingOldThread = new ReceiveOldMessagesThread(unicastSocket, textarea);
+			SendMessagesThread SendingThread = new  SendMessagesThread (s, group, args[0], Integer.parseInt(args[2])); 
+			
+			textarea.append("Waiting to receive messages from other memberrs ... \n");
+			byte[] buffer = new byte[1000]; 	// get messages from others in group
+			while(true) {
+				DatagramPacket msgIn = new DatagramPacket(buffer,buffer.length);
+				s.receive(msgIn);
+				textarea.append(new String(msgIn.getData(),0,msgIn.getLength())+"\n");
+				textarea.setCaretPosition(textarea.getDocument().getLength());
+				}
+		} catch (SocketException e){System.out.println("Error Socket: " + e.getMessage());
+		} catch (IOException e){System.out.println("Error IO: " + e.getMessage());
+		} finally {if(s != null) s.close();}
+	}
+} 
+
+
