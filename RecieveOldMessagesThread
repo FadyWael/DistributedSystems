@@ -1,0 +1,39 @@
+import java.net.*;
+import java.util.ArrayList;
+
+import javax.swing.JTextArea;
+
+import java.io.*;
+
+public class ReceiveOldMessagesThread extends Thread {
+    DatagramSocket unicastSocket;
+    JTextArea textarea;
+    public ReceiveOldMessagesThread (DatagramSocket unicastSocket, JTextArea textarea) {
+        	this.unicastSocket = unicastSocket;
+        	this.textarea = textarea;
+        	this.start();
+     }
+
+    public void run(){
+    	try {			              
+    		System.out.println("Receiving Old Messages ... ");
+    		byte[] Buffer = new byte[1000];
+    		String msg;
+			do { 
+				DatagramPacket msgIn = new DatagramPacket(Buffer, Buffer.length);
+				unicastSocket.receive(msgIn);	
+				msg = new String(msgIn.getData(), 0, msgIn.getLength());
+				if(!msg.equalsIgnoreCase("DONE")) 
+					textarea.append("OLD "+ msg +"\n");
+			} while(!msg.equalsIgnoreCase("DONE"));
+         }catch (EOFException e){System.out.println("Error EOF :"+e.getMessage());
+         } catch(IOException e) {System.out.println("Error readline :"+e.getMessage());
+         } finally{ }
+    }
+    
+    public void delay(int milliseconds){
+    	try {
+    		Thread.sleep(milliseconds);        
+        }catch (InterruptedException ie) { System.out.println(ie.getMessage()); }
+    }
+}
